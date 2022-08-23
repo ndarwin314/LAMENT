@@ -1,6 +1,7 @@
 # local imports
 import characters
-from characters import data, colors
+from characters import data, colors, characterList
+from commands import commandList, commandData
 import probability
 from database import Snail
 import components
@@ -30,6 +31,7 @@ connect("lament")
 
 load_dotenv()
 me = os.getenv("me")
+
 
 
 # sets funny presence and sends message saying its running
@@ -71,30 +73,15 @@ async def edit(
     await ctx.respond(ephemeral=True, view=components.Edit(character=character, data=data))
 
 @bot.slash_command(description="Add new character to DB")
-@option("character", description="Character to add")
-@option("element", description="Element of the character", options=characters.elements)
-async def add_character(ctx: discord.ApplicationContext,
-        character: str,
-        element: str):
-    characters.characters.append(character)
-    # TODO: switch to concat since apparently append is deprecated, also this is kind of awful in general
-    data.append({"characterName": character, "element": element}, ignore_index=True)
-    async with aiosqlite.connect("lament.db") as con:
-        cursor = await con.cursor()
-        await cursor.execute("""INSERT INTO character VALUES (?,"","","","","","", "", ?) """, (character, element))
-        await con.commit()
-    await ctx.send_response(f"Successfully added {character} to database, remember to add other fields", ephemeral=True)
+async def add_character(ctx: discord.ApplicationContext):
+    view = components.Add(data)
+    await ctx.respond(ephemeral=True, view=view)
 
 @bot.slash_command(description="Remove character from DB")
 @option("character", description="Character to remove", autocomplete=characters.get_characters)
 async def delete_character(ctx: discord.ApplicationContext,
               character: str):
-    characters.characters.remove(character)
-    async with aiosqlite.connect("lament.db") as con:
-        cursor = await con.cursor()
-        await cursor.execute("""DELETE from character WHERE (characterName=?)""", (character,))
-        await con.commit()
-    await ctx.send_response(f"Successfully removed {character} from database", ephemeral=True)
+    await ctx.respond(ephemeral=True, view=components.Delete(data, character))
 
 
 @bot.slash_command(description="Effective attack calculator")
@@ -188,6 +175,28 @@ async def wish(ctx: discord.ApplicationContext, banner: str, pity: int, primo: i
 @bot.slash_command(description="add :batchest:")
 async def batchest(ctx: discord.ApplicationContext):
     await ctx.respond("🦇🌰")
+
+@bot.slash_command(description="How does Dendro work")
+async def dendro(ctx: discord.ApplicationContext):
+    await ctx.respond("We don't know.")
+
+@bot.slash_command(description="Extra commands, check it out!")
+@option("name", description="Name of command", choices=commandList)
+async def command(ctx: discord.ApplicationContext, name: str):
+    index = characterList.index(name)
+    embed = discord.Embed(
+        title=commandData["title"][index],
+        description=commandData["description"][index],
+        color=discord.Color.blurple())
+    embed.add_field(
+        name=commandData["subtitle"][index],
+        value=commandData["response"][index]
+    )
+    embed.set_author(name=me)
+    url = commandData["image"][index]
+    if url:
+        embed.set_image(url=url)
+    await ctx.respond(embed=embed)
 
 # TODO: move these to separate file or database
 internationalList = ["https://www.youtube.com/watch?v=-YTMfF1sEcU",
