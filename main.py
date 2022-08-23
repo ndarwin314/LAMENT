@@ -1,5 +1,6 @@
 # local imports
 import characters
+from characters import data, colors
 import probability
 from database import Snail
 import components
@@ -9,9 +10,9 @@ from discord import option
 # database related imports
 from mongoengine import connect
 import mongoengine
-import sqlite3
-# file handling related imports
+import aiosqlite
 import pandas as pd
+# file handling related imports
 import os
 from dotenv import load_dotenv
 # misc
@@ -26,13 +27,9 @@ intents = discord.Intents.all()
 bot = discord.Bot(debug_guilds=[954468468894351450])
 
 connect("lament")
-con = sqlite3.connect("lament.db")
-data = pd.read_sql("SELECT characterName, summary, mainstats, substats, talents, artifacts, resources, image FROM character", con)
 
 load_dotenv()
 me = os.getenv("me")
-#data = pd.read_csv("data.csv")
-
 
 
 # sets funny presence and sends message saying its running
@@ -53,9 +50,9 @@ async def on_guild_join(guild: discord.Guild):
 async def value(
         ctx: discord.ApplicationContext,
         character: str):
-    embed = discord.Embed(title=f"{character} Summary", color=characters.colors[character])
-    processed = character.lower().replace(" ", "") + ".webp"
     index = characters.characters.index(character)
+    embed = discord.Embed(title=f"{character} Summary", color=colors[data["element"][index]])
+    processed = character.lower().replace(" ", "") + ".webp"
     embed.set_thumbnail(url=f"https://mathboi.net/static/{processed}")
     embed.add_field(name="Recommended main statats", value=data["mainstats"][index])
     embed.add_field(name="Recommended susbtats", value=data["substats"][index])
@@ -73,6 +70,33 @@ async def edit(
         character: str):
     await ctx.respond(ephemeral=True, view=components.Edit(character=character, data=data))
 
+@bot.slash_command(description="Add new character to DB")
+@option("character", description="Character to add")
+@option("element", description="Element of the character", options=characters.elements)
+async def add_character(ctx: discord.ApplicationContext,
+        character: str,
+        element: str):
+    characters.characters.append(character)
+    # TODO: switch to concat since apparently append is deprecated, also this is kind of awful in general
+    data.append({"characterName": character, "element": element}, ignore_index=True)
+    async with aiosqlite.connect("lament.db") as con:
+        cursor = await con.cursor()
+        await cursor.execute("""INSERT INTO character VALUES (?,"","","","","","", "", ?) """, (character, element))
+        await con.commit()
+    await ctx.send_response(f"Successfully added {character} to database, remember to add other fields", ephemeral=True)
+
+@bot.slash_command(description="Remove character from DB")
+@option("character", description="Character to remove", autocomplete=characters.get_characters)
+async def delete_character(ctx: discord.ApplicationContext,
+              character: str):
+    characters.characters.remove(character)
+    async with aiosqlite.connect("lament.db") as con:
+        cursor = await con.cursor()
+        await cursor.execute("""DELETE from character WHERE (characterName=?)""", (character,))
+        await con.commit()
+    await ctx.send_response(f"Successfully removed {character} from database", ephemeral=True)
+
+
 @bot.slash_command(description="Effective attack calculator")
 @option("attack", description="Total attack on stats page", type=float)
 @option("crit_rate", description="Crit rate on stats page", type=float)
@@ -81,7 +105,8 @@ async def eattack(ctx: discord.ApplicationContext,
                   attack: float,
                   crit_rate: float,
                   crit_damage :float):
-    await ctx.respond(f"Effective attack for {attack} attack, {crit_rate} CR, and {crit_damage} CD is {round(attack *(1+crit_rate*crit_damage /10000), 2)}")
+    await ctx.respond(f"Effective attack for {attack} attack, {crit_rate} CR, and {crit_damage} CD is "
+                      f"{round(attack *(1+crit_rate*crit_damage /10000), 2)}")
 
 @bot.event
 async def on_reaction_add(reaction: discord.Reaction, user: Union[discord.Member, discord.User]):

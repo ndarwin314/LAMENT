@@ -1,79 +1,24 @@
 import discord
 from discord import AutocompleteContext
+import sqlite3
+import pandas as pd
 
-elements = ["pyro", "hydro", "electro", "cryo", "geo", "anemo"]
-pyroCharacters = ["Amber",
-                  "Bennett",
-                  "Diluc",
-                  "Hu Tao",
-                  "Klee",
-                  "Thoma",
-                  "Xiangling",
-                  "Xinyan",
-                  "Yanfei",
-                  "Yoimiya"]
 
-hydroCharacters = ["Ayato",
-                   "Barbara",
-                   "Childe",
-                   "Kokomi",
-                   "Mona",
-                   "Xingqiu",
-                   "Yelan"]
-electroCharacters = ["Beidou",
-                     "Fischl",
-                     "Keqing",
-                     "Kuki",
-                     "Lisa",
-                     "Raiden",
-                     "Razor",
-                     "Sara",
-                     "Yae"]
-cryoCharacters = ["Aloy",
-                  "Ayaka",
-                  "Chongyun",
-                  "Diona",
-                  "Eula",
-                  "Ganyu",
-                  "Kaeya",
-                  "Qiqi",
-                  "Rosaria",
-                  "Shenhe"]
-geoCharacters = ["Albedo",
-                 "Gorou",
-                   "Itto",
-                   "Ningguang",
-                   "Noelle",
-                   "Yun Jin",
-                   "Zhongli"]
-anemoCharacters = ["Heizou",
-                 "Jean",
-                 "Kazuha",
-                 "Sayu",
-                 "Sucrose",
-                 "Venti",
-                 "Xiao"]
-characterDict = {"pyro": pyroCharacters,
-                 "hydro": hydroCharacters,
-                 "electro": electroCharacters,
-                 "cryo": cryoCharacters,
-                 "anemo": anemoCharacters,
-                 "geo": geoCharacters}
-characters = sorted(pyroCharacters + hydroCharacters + electroCharacters + cryoCharacters + anemoCharacters + geoCharacters)
-colors = dict()
-for c in characters:
-    if c in pyroCharacters:
-        colors[c] = discord.Color.from_rgb(178, 89, 63)
-    elif c in hydroCharacters:
-        colors[c] = discord.Color.from_rgb(57, 112, 184)
-    elif c in electroCharacters:
-        colors[c] = discord.Color.from_rgb(123, 81, 172)
-    elif c in cryoCharacters:
-        colors[c] = discord.Color.from_rgb(118, 213, 229)
-    elif c in geoCharacters:
-        colors[c] = discord.Color.from_rgb(189, 152, 71)
-    elif c in anemoCharacters:
-        colors[c] = discord.Color.from_rgb(56, 170, 171)
+con = sqlite3.connect("lament.db")
+cursor = con.cursor()
+data = pd.read_sql("SELECT characterName, element, summary, mainstats, substats, talents, artifacts, resources, image FROM character", con)
+elements = ["pyro", "hydro", "electro", "cryo", "geo", "anemo", "dendro"]
+
+result = cursor.execute("""SELECT characterName from character""")
+characters = [_[0]for _ in result.fetchall()]
+colors = {"pyro": discord.Color.from_rgb(178, 89, 63),
+          "hydro": discord.Color.from_rgb(57, 112, 184),
+          "electro": discord.Color.from_rgb(123, 81, 172),
+          "cryo": discord.Color.from_rgb(118, 213, 229),
+          "geo": discord.Color.from_rgb(189, 152, 71),
+          "anemo": discord.Color.from_rgb(56, 170, 171),
+          "dendro": discord.Color.from_rgb(0, 255, 0)} # TODO get actual color
+
 
 # autocomplete helper function for commands that are based on characters
 async def get_characters(ctx: AutocompleteContext):

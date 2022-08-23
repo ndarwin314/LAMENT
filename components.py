@@ -4,7 +4,7 @@ from characters import characters
 
 # used for editing database
 
-o = ["Summary", "Mainstats", "Substats", "Talents", "Artifacts", "Resources"]
+o = ["Summary", "Mainstats", "Substats", "Talents", "A  rtifacts", "Resources"]
 options = [discord.SelectOption(label=c, value=c) for c in o]
 
 class Edit(discord.ui.View):
@@ -19,7 +19,7 @@ class Edit(discord.ui.View):
     async def choose_field(self, select: discord.ui.Select, interaction: discord.Interaction):
         # we dont want to do anything right now
         self.field = select.values[0]
-        await interaction.response.send_modal(Text(self))
+        await interaction.response.send_modal(Text(self, self.field))
 
 
     @discord.ui.button(label="Confirm", style=discord.ButtonStyle.green, row=2)
@@ -30,10 +30,9 @@ class Edit(discord.ui.View):
         self.data[lowerField][i] = self.newValue
         async with aiosqlite.connect("lament.db") as con:
             cursor = await con.cursor()
-            print(self.field, self.newValue, self.character)
             query = f"""UPDATE character SET {self.field.lower()}='{self.newValue}' where characterName='{self.character}'"""
-            print(query)
             await cursor.execute(query)
+            await con.commit()
         await interaction.response.send_message(f"Replaced value {oldValue} in field {self.field} with {self.newValue} for {self.character}", ephemeral=True)
         self.stop()
 
@@ -45,8 +44,11 @@ class Edit(discord.ui.View):
 
 class Text(discord.ui.Modal):
 
-    def __init__(self, parent: Edit):
-        inputText = discord.ui.InputText(style=discord.InputTextStyle.long, label="New value of field")
+    def __init__(self, parent: Edit, field: str):
+        inputText = discord.ui.InputText(
+            style=discord.InputTextStyle.long,
+            label="New value of field",
+            value=parent.data[field.lower()][characters.index(parent.character)])
         self.parent = parent
         super().__init__(inputText, title="New value")
 
