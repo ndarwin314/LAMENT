@@ -20,7 +20,6 @@ hydroCharacters = ["Ayato",
                    "Mona",
                    "Xingqiu",
                    "Yelan"]
-
 electroCharacters = ["Beidou",
                      "Fischl",
                      "Keqing",
@@ -30,7 +29,6 @@ electroCharacters = ["Beidou",
                      "Razor",
                      "Sara",
                      "Yae"]
-
 cryoCharacters = ["Aloy",
                   "Ayaka",
                   "Chongyun",
@@ -41,7 +39,6 @@ cryoCharacters = ["Aloy",
                   "Qiqi",
                   "Rosaria",
                   "Shenhe"]
-
 geoCharacters = ["Albedo",
                  "Gorou",
                    "Itto",
@@ -49,7 +46,6 @@ geoCharacters = ["Albedo",
                    "Noelle",
                    "Yun Jin",
                    "Zhongli"]
-
 anemoCharacters = ["Heizou",
                  "Jean",
                  "Kazuha",
@@ -78,6 +74,8 @@ for c in characters:
         colors[c] = discord.Color.from_rgb(189, 152, 71)
     elif c in anemoCharacters:
         colors[c] = discord.Color.from_rgb(56, 170, 171)
+
+# autocomplete helper function for commands that are based on characters
 async def get_characters(ctx: AutocompleteContext):
     return [c for c in characters if c.lower().startswith(ctx.value.lower())]
 
