@@ -87,7 +87,7 @@ async def add_character(ctx: discord.ApplicationContext):
     view = components.Add(data)
     await ctx.respond(ephemeral=True, view=view)
 
-@discord.default_permissions(manage_messages=True)
+
 @bot.slash_command(description="Remove character from DB")
 @option("character", description="Character to remove", autocomplete=characters.get_characters)
 async def delete_character(ctx: discord.ApplicationContext,
@@ -213,6 +213,11 @@ async def command(ctx: discord.ApplicationContext, name: str):
     if url:
         embed.set_image(url=url)
     await ctx.respond(embed=embed)
+
+@bot.slash_command(description="Four stars you should build.")
+async def four_star(ctx: discord.ApplicationContext):
+    # TODO: make this an embed
+    await ctx.respond("https://docs.google.com/document/d/10lnOwQFIUDGcFdo9KIJ73BeeefmVvtISRA8KEnpjP2U/edit")
 
 # TODO: move these to separate file or database
 internationalList = ["https://www.youtube.com/watch?v=-YTMfF1sEcU",

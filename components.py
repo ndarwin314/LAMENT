@@ -152,6 +152,45 @@ class Delete(discord.ui.View):
 
 
 
+class AddCommand(discord.ui.View):
+
+    def __init__(self, data):
+        self.data = data
+        self.dataDict = {"name": None,
+                         "title": None,
+                         "description": None,
+                         "content": None,
+                         "image": None}
+        self.name = None
+        self.title = None
+        self.description = None
+        self.content = None
+        self.image = None
+
+    @discord.ui.button(label="Name", style=discord.ButtonStyle.green, row=0)
+    async def confirm_callback(self, button: discord.ui.Button, interaction: discord.Interaction):
+        await interaction.response.send_modal()
+
+    @discord.ui.button(label="Confirm", style=discord.ButtonStyle.green, row=2)
+    async def confirm_callback(self, button: discord.ui.Button, interaction: discord.Interaction):
+        characterList.remove(self.character)
+        async with aiosqlite.connect("lament.db") as con:
+            cursor = await con.cursor()
+            await cursor.execute("""DELETE from character WHERE (characterName=?)""", (self.character,))
+            await con.commit()
+        await interaction.response.send_response(f"Successfully removed character, {self.character}, from database",
+                                                 ephemeral=True)
+        # await interaction.message.delete(delay=5)
+        self.stop()
+
+    @discord.ui.button(label="Cancel", style=discord.ButtonStyle.red, row=2)
+    async def cancel_callback(self, button: discord.ui.Button, interaction: discord.Interaction):
+        await interaction.response.send_message("Cancelling", ephemeral=True, delete_after=5)
+        # await interaction.message.delete(delay=5)
+        self.stop()
+
+
+
 
 
 
