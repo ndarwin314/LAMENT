@@ -114,7 +114,7 @@ async def on_reaction_add(reaction: discord.Reaction, user: Union[discord.Member
             query = f"""SELECT `{guildid}` FROM snails WHERE id={authorid}"""
             results = await cursor.execute(query)
             results = await results.fetchone()
-            snailCount = 1 if len(results) == 0 else results[0] + 1
+            snailCount = 1 if results is None else results[0] + 1
             query = f"""UPDATE snails SET `{guildid}`={snailCount} WHERE id={authorid}"""
             await cursor.execute(query)
             await con.commit()
@@ -124,13 +124,13 @@ async def on_reaction_add(reaction: discord.Reaction, user: Union[discord.Member
 async def on_reaction_remove(reaction: discord.Reaction, user: Union[discord.Member, discord.User]):
     if reaction.emoji == "🐌":
         guildid = reaction.message.guild.id
-        authorid = author = str(reaction.message.author.id)
+        authorid = str(reaction.message.author.id)
         async with aiosqlite.connect("lament.db") as con:
             cursor = await con.cursor()
             query = f"""SELECT `{guildid}` FROM snails WHERE id={authorid}"""
             results = await cursor.execute(query)
             results = await results.fetchone()
-            snailCount = 1 if len(results)==0 else results[0]-1
+            snailCount = 1 if results is None else results[0]-1
             query = f"""UPDATE snails SET `{guildid}`={snailCount} WHERE id={authorid}"""
             await cursor.execute(query)
             await con.commit()
