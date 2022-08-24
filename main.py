@@ -25,7 +25,7 @@ from random import choice
 logging.basicConfig(level=logging.INFO)
 
 intents = discord.Intents.all()
-bot = discord.Bot(debug_guilds=[954468468894351450])
+bot = discord.Bot(debug_guilds=[954468468894351450, 774889207704715285])
 
 connect("lament")
 
