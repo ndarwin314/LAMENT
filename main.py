@@ -157,8 +157,8 @@ async def snails(ctx: discord.ApplicationContext):
         query = f"""SELECT id, `{id}` FROM snails"""
         results = await cursor.execute(query)
         await con.commit()
-    results = results.fetchall()
-    snails = sorted(query.snails.items(), key=lambda p: p[1], reverse=True)
+    results = await results.fetchall()
+    snails = sorted(results, key=lambda p: p[1], reverse=True)
     embed = discord.Embed(title="Snail Leaderboard", color=discord.Colour.blurple(), description="Who is the slowest of them all?")
     embed.add_field(name="Snail King", value=f"{index_to_place(0)} {(await bot.fetch_user(snails[0][0])).name}: {snails[0][1]}", inline=False)
     bad = []
