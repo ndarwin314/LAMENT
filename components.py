@@ -95,6 +95,7 @@ class Add(discord.ui.View):
             await interaction.response.send_response(f"{character} already present, dumbass", ephemeral=True)
             self.stop()
         else:
+            # TODO: something is bugged here so there is an out of bounds index for new characters
             element = self.element
             characterList.append(self.character)
             # TODO: switch to concat since apparently append is deprecated, also this is kind of awful in general

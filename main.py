@@ -56,6 +56,10 @@ async def on_guild_join(guild: discord.Guild):
         await con.commit()
     print("added document to database")
 
+def bad(string: str):
+    return "None" if string=="" else string
+
+
 @bot.slash_command(description="Pull value of characters")
 @option("character", description="Choose a character", autocomplete=characters.get_characters)
 async def value(
@@ -65,12 +69,12 @@ async def value(
     embed = discord.Embed(title=f"{character} Summary", color=colors[data["element"][index]])
     processed = character.lower().replace(" ", "") + ".webp"
     embed.set_thumbnail(url=f"https://mathboi.net/static/{processed}")
-    embed.add_field(name="Recommended main stats", value=data["mainstats"][index])
-    embed.add_field(name="Recommended substats", value=data["substats"][index])
-    embed.add_field(name="Recommended artifact sets", value=data["artifacts"][index])
-    embed.add_field(name="Talent Priorities", value=data["talents"][index])
-    embed.add_field(name="Summary", value=data["summary"][index], inline=False)
-    embed.add_field(name="Resources", value=data["resources"][index])
+    embed.add_field(name="Recommended main stats", value=bad(data["mainstats"][index]))
+    embed.add_field(name="Recommended substats", value=bad(data["substats"][index]))
+    embed.add_field(name="Recommended artifact sets", value=bad(data["artifacts"][index]))
+    embed.add_field(name="Talent Priorities", value=bad(data["talents"][index]))
+    embed.add_field(name="Summary", value=bad(data["summary"][index]), inline=False)
+    embed.add_field(name="Resources", value=bad(data["resources"][index]))
     embed.set_author(name=me)
     await ctx.respond(embed=embed)
 
