@@ -32,7 +32,15 @@ connect("lament")
 load_dotenv()
 me = os.getenv("me")
 
+def helper_command(func):
+    async def inner(*args, **kwargs):
+        ctx: discord.ApplicationContext = args["ctx"]
+        if ctx.guild.id == 954468468894351450 or 971654143116726293 in [role.id for role in ctx.author.roles]:
+            func(*args, **kwargs)
+        else:
+            await ctx.respond("Not helper L", ephemeral=True)
 
+    return inner
 
 # sets funny presence and sends message saying its running
 @bot.event
@@ -65,6 +73,7 @@ async def value(
     embed.set_author(name=me)
     await ctx.respond(embed=embed)
 
+@discord.default_permissions(manage_messages=True)
 @bot.slash_command(description="Edit pull command response")
 @option("character", description="Choose a character", autocomplete=characters.get_characters)
 async def edit(
@@ -72,11 +81,13 @@ async def edit(
         character: str):
     await ctx.respond(ephemeral=True, view=components.Edit(character=character, data=data))
 
+@discord.default_permissions(manage_messages=True)
 @bot.slash_command(description="Add new character to DB")
 async def add_character(ctx: discord.ApplicationContext):
     view = components.Add(data)
     await ctx.respond(ephemeral=True, view=view)
 
+@discord.default_permissions(manage_messages=True)
 @bot.slash_command(description="Remove character from DB")
 @option("character", description="Character to remove", autocomplete=characters.get_characters)
 async def delete_character(ctx: discord.ApplicationContext,
@@ -178,7 +189,12 @@ async def batchest(ctx: discord.ApplicationContext):
 
 @bot.slash_command(description="How does Dendro work")
 async def dendro(ctx: discord.ApplicationContext):
-    await ctx.respond("We don't know.")
+    embed = discord.Embed(title="How does Dendro work?", description="Its complicated, here is an early guide https://docs.google.com/document/d/e/2PACX-1vRKcjJ7GXzosMQmQbScEsJEmzYIc4fyE3RfU6IiGLJWR6dloCZuuWSUQRlyJlbevoyBdABwfQ51Veks/pub", colour=colors["dendro"])
+    embed.add_field(name="Does <x> good?", value="It needs to be tested on the live server.", inline=False)
+    embed.add_field(name="Is Tighnari/Collei/DMC good?", value="Give time for testing.", inline=False)
+    embed.set_thumbnail(url="https://cdn.discordapp.com/attachments/962218404566138950/1011791022554087504/unknown.png")
+    #embed.set_image(url=)
+    await ctx.respond(embed=embed)
 
 @bot.slash_command(description="Extra commands, check it out!")
 @option("name", description="Name of command", choices=commandList)

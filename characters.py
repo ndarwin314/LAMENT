@@ -20,7 +20,7 @@ colors = {"pyro": discord.Color.from_rgb(178, 89, 63),
           "cryo": discord.Color.from_rgb(118, 213, 229),
           "geo": discord.Color.from_rgb(189, 152, 71),
           "anemo": discord.Color.from_rgb(56, 170, 171),
-          "dendro": discord.Color.from_rgb(0, 255, 0)} # TODO get actual color
+          "dendro": discord.Color.from_rgb(165, 200, 59)} # TODO get actual color
 
 # autocomplete helper function for commands that are based on characters
 async def get_characters(ctx: AutocompleteContext):
