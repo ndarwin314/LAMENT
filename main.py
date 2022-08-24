@@ -49,7 +49,11 @@ async def on_ready():
 @bot.event
 async def on_guild_join(guild: discord.Guild):
     # TODO: change this to add column to DB
-    server = Snail(snails={str(guild.me.id): 0}, server=guild.id).save()
+    async with aiosqlite.connect("lament.db") as con:
+        cursor = await con.cursor()
+        query = f"""ALTER TABLE snails ADD `{guild.id}` INTEGER"""
+        await cursor.execute(query)
+        await con.commit()
     print("added document to database")
 
 @bot.slash_command(description="Pull value of characters")
@@ -108,14 +112,17 @@ async def eattack(ctx: discord.ApplicationContext,
 async def on_reaction_add(reaction: discord.Reaction, user: Union[discord.Member, discord.User]):
     if reaction.emoji == "🐌":
         guildid = reaction.message.guild.id
-        authorid = author = str(reaction.message.author.id)
+        authorid = str(reaction.message.author.id)
         async with aiosqlite.connect("lament.db") as con:
             cursor = await con.cursor()
             query = f"""SELECT `{guildid}` FROM snails WHERE id={authorid}"""
             results = await cursor.execute(query)
             results = await results.fetchone()
             snailCount = 1 if results is None else results[0] + 1
-            query = f"""UPDATE snails SET `{guildid}`={snailCount} WHERE id={authorid}"""
+            if results is None:
+                query = f"""INSERT into snails (id, `{guildid}`) VALUES({authorid}, {snailCount})"""
+            else:
+                query = f"""UPDATE snails SET `{guildid}`={snailCount} WHERE id={authorid}"""
             await cursor.execute(query)
             await con.commit()
 
@@ -130,8 +137,11 @@ async def on_reaction_remove(reaction: discord.Reaction, user: Union[discord.Mem
             query = f"""SELECT `{guildid}` FROM snails WHERE id={authorid}"""
             results = await cursor.execute(query)
             results = await results.fetchone()
-            snailCount = 1 if results is None else results[0]-1
-            query = f"""UPDATE snails SET `{guildid}`={snailCount} WHERE id={authorid}"""
+            snailCount = 0 if results is None else results[0] - 1
+            if results is None:
+                query = f"""INSERT into snails (id, `{guildid}`) VALUES({authorid}, {snailCount})"""
+            else:
+                query = f"""UPDATE snails SET `{guildid}`={snailCount} WHERE id={authorid}"""
             await cursor.execute(query)
             await con.commit()
 
@@ -150,7 +160,6 @@ def index_to_place(i: int):
 
 @bot.slash_command(description="Snail Counter")
 async def snails(ctx: discord.ApplicationContext):
-    server = ctx.guild.id
     id = ctx.guild.id
     async with aiosqlite.connect("lament.db") as con:
         cursor = await con.cursor()
@@ -159,16 +168,20 @@ async def snails(ctx: discord.ApplicationContext):
         await con.commit()
         results = await results.fetchall()
     snails = sorted(results, key=lambda p: p[1], reverse=True)
+    print(snails)
     embed = discord.Embed(title="Snail Leaderboard", color=discord.Colour.blurple(), description="Who is the slowest of them all?")
     embed.add_field(name="Snail King", value=f"{index_to_place(0)} {(await bot.fetch_user(snails[0][0])).name}: {snails[0][1]}", inline=False)
     bad = []
-    for i in range(1, min(3, len(snails))):
-        bad.append(f"{index_to_place(i)} {(await bot.fetch_user(snails[i][0])).name}: {snails[i][1]}\n")
-    embed.add_field(name="Snail top 3", value="".join(bad),inline=False)
-    bad = []
-    for i in range(3, min(10, len(snails))):
-        bad.append(f" {index_to_place(i)} {(await bot.fetch_user(snails[i][0])).name}: {snails[i][1]}\n")
-    embed.add_field(name="Snail top 10", value="".join(bad), inline=False)
+    length = len(snails)
+    if length > 1:
+        for i in range(1, min(3, len(snails))):
+            bad.append(f"{index_to_place(i)} {(await bot.fetch_user(snails[i][0])).name}: {snails[i][1]}\n")
+        embed.add_field(name="Snail top 3", value="".join(bad),inline=False)
+        if length > 3:
+            bad = []
+            for i in range(3, min(10, len(snails))):
+                bad.append(f" {index_to_place(i)} {(await bot.fetch_user(snails[i][0])).name}: {snails[i][1]}\n")
+            embed.add_field(name="Snail top 10", value="".join(bad), inline=False)
     embed.set_author(name=me)
     await ctx.respond(embed=embed)
 
