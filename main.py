@@ -88,6 +88,7 @@ async def add_character(ctx: discord.ApplicationContext):
     await ctx.respond(ephemeral=True, view=view)
 
 
+@discord.default_permissions(manage_messages=True)
 @bot.slash_command(description="Remove character from DB")
 @option("character", description="Character to remove", autocomplete=characters.get_characters)
 async def delete_character(ctx: discord.ApplicationContext,
@@ -204,20 +205,33 @@ async def command(ctx: discord.ApplicationContext, name: str):
         title=commandData["title"][index],
         description=commandData["description"][index],
         color=discord.Color.blurple())
-    embed.add_field(
+    """embed.add_field(
         name=commandData["subtitle"][index],
         value=commandData["response"][index]
-    )
+    )"""
     embed.set_author(name=me)
     url = commandData["image"][index]
     if url:
         embed.set_image(url=url)
     await ctx.respond(embed=embed)
 
+@discord.default_permissions(manage_messages=True)
+@bot.slash_command(description="add embed commands")
+async def add_command(ctx: discord.ApplicationContext):
+    await ctx.send_response(view=components.AddCommand(commandData))
+
 @bot.slash_command(description="Four stars you should build.")
 async def four_star(ctx: discord.ApplicationContext):
     # TODO: make this an embed
     await ctx.respond("https://docs.google.com/document/d/10lnOwQFIUDGcFdo9KIJ73BeeefmVvtISRA8KEnpjP2U/edit")
+
+@bot.slash_command(description="Xiao")
+async def xiao(ctx: discord.ApplicationContext):
+    await ctx.respond("https://www.youtube.com/watch?v=0vci3o7mf2A")
+
+@bot.slash_command(description="zy0x")
+async def socks(ctx: discord.ApplicationContext):
+    await ctx.respond("is shorter than xiao")
 
 # TODO: move these to separate file or database
 internationalList = ["https://www.youtube.com/watch?v=-YTMfF1sEcU",

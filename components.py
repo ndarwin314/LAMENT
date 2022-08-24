@@ -1,5 +1,6 @@
 import discord
 import aiosqlite
+from commands import commandList
 from characters import characterList, elements
 from typing import Union
 
@@ -151,47 +152,90 @@ class Delete(discord.ui.View):
         self.stop()
 
 
-
 class AddCommand(discord.ui.View):
 
     def __init__(self, data):
         self.data = data
+        self.completed = False
         self.dataDict = {"name": None,
                          "title": None,
                          "description": None,
+                         "subtitle": None,
                          "content": None,
                          "image": None}
-        self.name = None
-        self.title = None
-        self.description = None
-        self.content = None
-        self.image = None
+        super().__init__()
 
-    @discord.ui.button(label="Name", style=discord.ButtonStyle.green, row=0)
+    @discord.ui.button(label="Click Me", style=discord.ButtonStyle.blurple, row=0)
+    async def start_callback(self, button: discord.ui.Button, interaction: discord.Interaction):
+        self.completed = True
+        await interaction.response.send_modal(Bad(self, self.dataDict))
+
+    @discord.ui.button(label="Confirm", style=discord.ButtonStyle.green, row=1)
     async def confirm_callback(self, button: discord.ui.Button, interaction: discord.Interaction):
-        await interaction.response.send_modal()
+        if self.completed:
+            name = self.dataDict["name"]
+            title = self.dataDict["title"]
+            desc = self.dataDict["description"]
+            image = self.dataDict["image"]
+            self.data.append({"commandName": name, "title": title, "description": desc, "image":image}, ignore_index=True)
+            commandList.append("name")
+            async with aiosqlite.connect("lament.db") as con:
+                cursor = await con.cursor()
+                await cursor.execute(
+                    """INSERT into commands (?, ?, ?, "", "", ?)""",
+                    (self.dataDict["name"], self.dataDict["title"], self.dataDict["description"], self.dataDict["image"]))
+                await con.commit()
+            await interaction.response.send_response(f"Successfully removed character, {self.character}, from database",
+                                                     ephemeral=True)
+            # await interaction.message.delete(delay=5)
+            self.stop()
+        else:
+            await interaction.response.send_response("complete the prompt")
 
-    @discord.ui.button(label="Confirm", style=discord.ButtonStyle.green, row=2)
-    async def confirm_callback(self, button: discord.ui.Button, interaction: discord.Interaction):
-        characterList.remove(self.character)
-        async with aiosqlite.connect("lament.db") as con:
-            cursor = await con.cursor()
-            await cursor.execute("""DELETE from character WHERE (characterName=?)""", (self.character,))
-            await con.commit()
-        await interaction.response.send_response(f"Successfully removed character, {self.character}, from database",
-                                                 ephemeral=True)
-        # await interaction.message.delete(delay=5)
-        self.stop()
-
-    @discord.ui.button(label="Cancel", style=discord.ButtonStyle.red, row=2)
+    @discord.ui.button(label="Cancel", style=discord.ButtonStyle.red, row=1)
     async def cancel_callback(self, button: discord.ui.Button, interaction: discord.Interaction):
         await interaction.response.send_message("Cancelling", ephemeral=True, delete_after=5)
         # await interaction.message.delete(delay=5)
         self.stop()
 
 
+class Bad(discord.ui.Modal):
+    bad2 = {"name": "Name of the command, should be short",
+            "title": "Title of the embed to send",
+            "description": "Main body of response",
+            "image": "Link to an image, is optional"}
+    def __init__(self, parent: AddCommand, value: dict[str]):
+        self.parent = parent
+        self.value = value
+        name = discord.ui.InputText(
+            style=discord.InputTextStyle.short,
+            label=self.bad2["name"],
+            value=value["name"] if value["name"] is not None else "",
+        )
+        title = discord.ui.InputText(
+            style=discord.InputTextStyle.short,
+            label=self.bad2["title"],
+            value=value["title"] if value["title"] is not None else "",
+        )
 
+        desc = discord.ui.InputText(
+            style=discord.InputTextStyle.long,
+            label=self.bad2["description"],
+            value=value["description"] if value["description"] is not None else "",
+        )
 
+        image = discord.ui.InputText(
+            style=discord.InputTextStyle.long,
+            label=self.bad2["image"],
+            value=value["image"] if value["image"] is not None else "",
+            required=False
+        )
+        super().__init__(name, title, desc, image, title="idk")
 
-
+    async def callback(self, interaction: discord.Interaction):
+        self.parent.dataDict["name"] = self.children[0].value
+        self.parent.dataDict["title"] = self.children[1].value
+        self.parent.dataDict["description"] = self.children[2].value
+        self.parent.dataDict["image"] = self.children[3].value
+        await interaction.response.defer()
 
