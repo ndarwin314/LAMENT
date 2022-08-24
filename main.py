@@ -9,8 +9,6 @@ import components
 import discord
 from discord import option
 # database related imports
-from mongoengine import connect
-import mongoengine
 import aiosqlite
 import pandas as pd
 # file handling related imports
@@ -26,8 +24,6 @@ logging.basicConfig(level=logging.INFO)
 
 intents = discord.Intents.all()
 bot = discord.Bot(debug_guilds=[954468468894351450, 774889207704715285])
-
-connect("lament")
 
 load_dotenv()
 me = os.getenv("me")
@@ -52,6 +48,7 @@ async def on_ready():
 # sets up server specific database related info
 @bot.event
 async def on_guild_join(guild: discord.Guild):
+    # TODO: change this to add column to DB
     server = Snail(snails={str(guild.me.id): 0}, server=guild.id).save()
     print("added document to database")
 
@@ -64,8 +61,8 @@ async def value(
     embed = discord.Embed(title=f"{character} Summary", color=colors[data["element"][index]])
     processed = character.lower().replace(" ", "") + ".webp"
     embed.set_thumbnail(url=f"https://mathboi.net/static/{processed}")
-    embed.add_field(name="Recommended main statats", value=data["mainstats"][index])
-    embed.add_field(name="Recommended susbtats", value=data["substats"][index])
+    embed.add_field(name="Recommended main stats", value=data["mainstats"][index])
+    embed.add_field(name="Recommended substats", value=data["substats"][index])
     embed.add_field(name="Recommended artifact sets", value=data["artifacts"][index])
     embed.add_field(name="Talent Priorities", value=data["talents"][index])
     embed.add_field(name="Summary", value=data["summary"][index], inline=False)
@@ -109,22 +106,34 @@ async def eattack(ctx: discord.ApplicationContext,
 
 @bot.event
 async def on_reaction_add(reaction: discord.Reaction, user: Union[discord.Member, discord.User]):
-    if True and reaction.emoji == "🐌":  # TODO: add condition to check if user is helper
-        query: Snail = mongoengine.queryset.QuerySet.get(Snail.objects, server=reaction.message.guild.id)
-        snailCounts = query.snails
-        author = str(reaction.message.author.id)
-        snailCounts[author] = snailCounts.get(author, 0) + 1
-        query.update(snails = snailCounts)
+    if reaction.emoji == "🐌":
+        guildid = reaction.message.guild.id
+        authorid = author = str(reaction.message.author.id)
+        async with aiosqlite.connect("lament.db") as con:
+            cursor = await con.cursor()
+            query = f"""SELECT `{guildid}` FROM snails WHERE id={authorid}"""
+            results = await cursor.execute(query)
+            results = await results.fetchone()
+            snailCount = 1 if len(results) == 0 else results[0] + 1
+            query = f"""UPDATE snails SET `{guildid}`={snailCount} WHERE id={authorid}"""
+            await cursor.execute(query)
+            await con.commit()
 
 
 @bot.event
 async def on_reaction_remove(reaction: discord.Reaction, user: Union[discord.Member, discord.User]):
-    if True and reaction.emoji == "🐌": # add condition to check if user is helper
-        query: Snail = mongoengine.queryset.QuerySet.get(Snail.objects, server=reaction.message.guild.id)
-        snailCounts = query.snails
-        author = str(reaction.message.author.id)
-        snailCounts[author] = min(snailCounts.get(author, 0) - 1, 0)
-        query.update(snails = snailCounts)
+    if reaction.emoji == "🐌":
+        guildid = reaction.message.guild.id
+        authorid = author = str(reaction.message.author.id)
+        async with aiosqlite.connect("lament.db") as con:
+            cursor = await con.cursor()
+            query = f"""SELECT `{guildid}` FROM snails WHERE id={authorid}"""
+            results = await cursor.execute(query)
+            results = await results.fetchone()
+            snailCount = 1 if len(results)==0 else results[0]-1
+            query = f"""UPDATE snails SET `{guildid}`={snailCount} WHERE id={authorid}"""
+            await cursor.execute(query)
+            await con.commit()
 
 # helper function thats probably overkill for the snail command
 def index_to_place(i: int):
@@ -142,7 +151,13 @@ def index_to_place(i: int):
 @bot.slash_command(description="Snail Counter")
 async def snails(ctx: discord.ApplicationContext):
     server = ctx.guild.id
-    query: Snail = mongoengine.queryset.QuerySet.get(Snail.objects, server=server)
+    id = ctx.guild.id
+    async with aiosqlite.connect("lament.db") as con:
+        cursor = await con.cursor()
+        query = f"""SELECT id, `{id}` FROM snails"""
+        results = await cursor.execute(query)
+        await con.commit()
+    results = results.fetchall()
     snails = sorted(query.snails.items(), key=lambda p: p[1], reverse=True)
     embed = discord.Embed(title="Snail Leaderboard", color=discord.Colour.blurple(), description="Who is the slowest of them all?")
     embed.add_field(name="Snail King", value=f"{index_to_place(0)} {(await bot.fetch_user(snails[0][0])).name}: {snails[0][1]}", inline=False)
@@ -191,7 +206,7 @@ async def batchest(ctx: discord.ApplicationContext):
 @bot.slash_command(description="How does Dendro work")
 async def dendro(ctx: discord.ApplicationContext):
     embed = discord.Embed(title="How does Dendro work?", description="Its complicated, here is an early guide https://docs.google.com/document/d/e/2PACX-1vRKcjJ7GXzosMQmQbScEsJEmzYIc4fyE3RfU6IiGLJWR6dloCZuuWSUQRlyJlbevoyBdABwfQ51Veks/pub", colour=colors["dendro"])
-    embed.add_field(name="Does <x> good?", value="It needs to be tested on the live server.", inline=False)
+    embed.add_field(name="Does <x> work?", value="It needs to be tested on the live server.", inline=False)
     embed.add_field(name="Is Tighnari/Collei/DMC good?", value="Give time for testing.", inline=False)
     embed.set_thumbnail(url="https://cdn.discordapp.com/attachments/962218404566138950/1011791022554087504/unknown.png")
     #embed.set_image(url=)
