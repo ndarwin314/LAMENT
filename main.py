@@ -224,6 +224,7 @@ async def dendro(ctx: discord.ApplicationContext):
     embed = discord.Embed(title="How does Dendro work?", description="Its complicated, here is an early guide https://docs.google.com/document/d/e/2PACX-1vRKcjJ7GXzosMQmQbScEsJEmzYIc4fyE3RfU6IiGLJWR6dloCZuuWSUQRlyJlbevoyBdABwfQ51Veks/pub", colour=colors["dendro"])
     embed.add_field(name="Does <x> work?", value="It needs to be tested on the live server.", inline=False)
     embed.add_field(name="Is Tighnari/Collei/DMC good?", value="Give time for testing.", inline=False)
+    embed.add_field(name="Is EM good on <x> character?", value="Wait for calcs.", inline=False)
     embed.set_thumbnail(url="https://cdn.discordapp.com/attachments/962218404566138950/1011791022554087504/unknown.png")
     #embed.set_image(url=)
     await ctx.respond(embed=embed)
