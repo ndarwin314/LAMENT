@@ -10,7 +10,7 @@ import discord
 from discord import option
 # database related imports
 import aiosqlite
-import pandas as pd
+
 # file handling related imports
 import os
 from dotenv import load_dotenv
