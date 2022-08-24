@@ -307,6 +307,5 @@ async def national(ctx: discord.ApplicationContext):
     await ctx.respond(choice(nationalList))
 
 
-
 bot.run(os.getenv("TOKEN"))
 
