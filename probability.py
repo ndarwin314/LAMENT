@@ -10,7 +10,6 @@ def cumulative(array, index):
     return f"{round(100*array.cumsum()[index],2)}"
 
 def weapon(wishes=0, guarantee=True, pity=0):
-    print(wishes, guarantee, pity)
     base = np.zeros((81,))
     p = 0.007
     ramp = 0.06 #temporary
@@ -92,5 +91,3 @@ def character(wishes=0, guarantee=False, pity=0):
         fullPDF = np.convolve(fullPDF, doublePDF)
         probabilities.append(cumulative(fullPDF, wishes))
     return probabilities
-
-print(wtf(70, True, 0))
