@@ -28,6 +28,11 @@ bot = discord.Bot(debug_guilds=[954468468894351450, 774889207704715285])
 load_dotenv()
 me = os.getenv("me")
 
+def is_helper(member: discord.Member):
+    return 971654143116726293 not in [role.id for role in member.roles]
+
+
+
 def helper_command(func):
     async def inner(*args, **kwargs):
         ctx: discord.ApplicationContext = args["ctx"]
@@ -76,7 +81,7 @@ async def value(
     embed.add_field(name="Summary", value=bad(data["summary"][index]), inline=False)
     embed.add_field(name="Resources", value=bad(data["resources"][index]))
     embed.set_author(name=me)
-    await ctx.respond(embed=embed)
+    await ctx.respond(embed=embed, ephemeral=is_helper(ctx.author))
 
 @discord.default_permissions(manage_messages=True)
 @bot.slash_command(description="Edit pull command response")
@@ -110,7 +115,7 @@ async def eattack(ctx: discord.ApplicationContext,
                   crit_rate: float,
                   crit_damage :float):
     await ctx.respond(f"Effective attack for {attack} attack, {crit_rate} CR, and {crit_damage} CD is "
-                      f"{round(attack *(1+crit_rate*crit_damage /10000), 2)}")
+                      f"{round(attack *(1+crit_rate*crit_damage /10000), 2)}", ephemeral=is_helper(ctx.author))
 
 @bot.event
 async def on_reaction_add(reaction: discord.Reaction, user: Union[discord.Member, discord.User]):
@@ -191,7 +196,7 @@ async def snails(ctx: discord.ApplicationContext):
 # fancy formatting wow
 @bot.slash_command(description="Odds of getting 5* from weapon or character banner")
 @option("banner", description="Weapon or character banner", choices=["Character", "Weapon"])
-@option("pity", description="Current pity on the banner", type=int, min_value=0, max_value=90)
+@option("pity", description="Current pity on the banner", type=int, min_value=0, max_value=89)
 @option("primo", description="Current number of primos", type=int, min_value=0)
 @option("fate", description="Current number of fates", type=int, min_value=0)
 @option("guarantee", description="Do you have a guarantee", type=bool)
@@ -200,14 +205,17 @@ async def wish(ctx: discord.ApplicationContext, banner: str, pity: int, primo: i
     embed = discord.Embed(title="Wish Probabilities", color=discord.Color.blurple())
     embed.set_author(name=me)
     func = probability.character if banner=="Character" else probability.weapon
+    print(func)
     label = "Constellations" if banner=="Character" else "Refinements"
     if banner=="Weapon":
-        pity = max(80, pity)
+        pity = min(79, pity)
     results = func(wishes, guarantee, pity)
+
     bad = ["```\n", "|{:<16}| {:<13}|".format(label, "Probability")]
+    bad2 = banner == "Weapon"
     for i in range(len(results)):
         embed.add_field(name="", value="")
-        bad.append("|{:<16}| {:<13}|".format(i, str(results[i]) + "%"))
+        bad.append("|{:<16}| {:<13}|".format(i+bad2, str(results[i]) + "%"))
     bad.append("```")
     lineSeperator = "\n" + "|" + "-"*16 + "+" + "-"*14 + "|" + "\n"
     response = lineSeperator.join(bad)
@@ -221,10 +229,15 @@ async def batchest(ctx: discord.ApplicationContext):
 
 @bot.slash_command(description="How does Dendro work")
 async def dendro(ctx: discord.ApplicationContext):
-    embed = discord.Embed(title="How does Dendro work?", description="Its complicated, here is an early guide https://docs.google.com/document/d/e/2PACX-1vRKcjJ7GXzosMQmQbScEsJEmzYIc4fyE3RfU6IiGLJWR6dloCZuuWSUQRlyJlbevoyBdABwfQ51Veks/pub", colour=colors["dendro"])
+    embed = discord.Embed(title="How does Dendro work?",
+                          description="Its complicated, here is an early guide https://docs.google.com/document/d/e/2PACX-1vRKcjJ7GXzosMQmQbScEsJEmzYIc4fyE3RfU6IiGLJWR6dloCZuuWSUQRlyJlbevoyBdABwfQ51Veks/pub",
+                          colour=colors["dendro"])
     embed.add_field(name="Does <x> work?", value="It needs to be tested on the live server.", inline=False)
     embed.add_field(name="Is Tighnari/Collei/DMC good?", value="Give time for testing.", inline=False)
     embed.add_field(name="Is EM good on <x> character?", value="Wait for calcs.", inline=False)
+    embed.add_field(name="Are the new artifact sets good?",
+                    value="Deepwood is probably best for DMC and Collei if they are will Tighnari, "
+                          "Gilded is probably best for Tighnari. Gilded could be good on more characters but wait for calcs.", inline=False)
     embed.set_thumbnail(url="https://cdn.discordapp.com/attachments/962218404566138950/1011791022554087504/unknown.png")
     #embed.set_image(url=)
     await ctx.respond(embed=embed)
@@ -247,6 +260,7 @@ async def command(ctx: discord.ApplicationContext, name: str):
         embed.set_image(url=url)
     await ctx.respond(embed=embed)
 
+
 @discord.default_permissions(manage_messages=True)
 @bot.slash_command(description="add embed commands")
 async def add_command(ctx: discord.ApplicationContext):
@@ -256,6 +270,48 @@ async def add_command(ctx: discord.ApplicationContext):
 async def four_star(ctx: discord.ApplicationContext):
     # TODO: make this an embed
     await ctx.respond("https://docs.google.com/document/d/10lnOwQFIUDGcFdo9KIJ73BeeefmVvtISRA8KEnpjP2U/edit")
+
+@bot.slash_command(descripion="Starglitter spending guide")
+async def starglitter(ctx: discord.ApplicationContext):
+    embed = discord.Embed(
+        title="Starglitter Guide",
+        color=discord.Color.blurple()
+    )
+    embed.set_author(name=me)
+    embed.add_field(
+        name="Characters",
+        value="Getting the first copy of strong 4* like Bennett, Xingqiu, Fischl, and Beidou is the most valuable use of Starglitter. "
+              "Getting good constellations for these characters, such as Bennett c1 and c5, Xiangling c4, all of Xingius cons, Beidou c2 or Fischl c3 and c6,"
+              " is the next best use."
+    )
+    embed.add_field(
+        name="Weapons",
+        value="Blackcliff Polearm is the only good option for Xiao if you don't have Deathmatch or a 5*, similarly it is"
+              " decent for Hu Tao if you lack Dragon's Bane or better weapons. All the other weapon types have better "
+              "free options, Amenoma for swords, Archaic for claymores, Crescent for bows, and TTDS for catalysts. The "
+              "royal weapons are even worse and should never be bought."
+    )
+    embed.add_field(
+        name="Wishes",
+        value="If you already have the character constellations you want and good weapons, buying wishes is the best option "
+              "left but it's not recommended until then."
+    )
+    embed.set_image(url="https://cdn.discordapp.com/attachments/971108414476402728/1019371083410968616/unknown.png")
+    await ctx.respond(embed=embed, ephemeral=is_helper(ctx.author))
+
+@bot.slash_command(desciption="its for money")
+async def dad(ctx: discord.ApplicationContext):
+    await ctx.respond("https://www.youtube.com/watch?v=F1HjJ7JQXBI")
+
+@bot.slash_command(description="Should you pull on weapon banner?")
+async def weapon_banner(ctx: discord.ApplicationContext):
+    embed = discord.Embed(title="Should you pull on weapon banner?",
+                          description="Flowchart to help decide whether wishing on weapon banner is worth it",
+                          colour=discord.Colour.blue())
+    embed.set_author(name="kaisu#4690")
+    embed.set_image(url="https://cdn.discordapp.com/attachments/971108414476402728/1014093576407363605/download_6.jpg")
+    await ctx.respond(embed=embed)
+
 
 @bot.slash_command(description="Xiao")
 async def xiao(ctx: discord.ApplicationContext):
