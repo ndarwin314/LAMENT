@@ -261,6 +261,10 @@ async def command(ctx: discord.ApplicationContext, name: str):
     await ctx.respond(embed=embed)
 
 
+@bot.slash_command(description="nerdge")
+async def nerdgar(ctx: discord.ApplicationContext):
+    await ctx.respond("https://cdn.discordapp.com/attachments/901684481012944937/1038487360578527263/unknown-54.png")
+
 @discord.default_permissions(manage_messages=True)
 @bot.slash_command(description="add embed commands")
 async def add_command(ctx: discord.ApplicationContext):
