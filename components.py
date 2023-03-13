@@ -2,6 +2,7 @@ import discord
 import aiosqlite
 from commands import commandList
 from characters import characterList, elements
+import pandas as pd
 from typing import Union
 
 # used for editing database
@@ -22,7 +23,10 @@ class Edit(discord.ui.View):
     async def choose_field(self, select: discord.ui.Select, interaction: discord.Interaction):
         # we dont want to do anything right now
         self.field = select.values[0]
-        await interaction.response.send_modal(EditBox(self, self.field))
+        try:
+            await interaction.response.send_modal(EditBox(self, self.field))
+        except discord.errors.HTTPException:
+            await interaction.response.send_modal(EditBox(self, ""))
 
 
     @discord.ui.button(label="Confirm", style=discord.ButtonStyle.green, row=2)
@@ -30,7 +34,7 @@ class Edit(discord.ui.View):
         if self.newValue is None:
             await interaction.response.send_message(
                 f"Type a character loser",
-                ephemeral=True, delete_after=5)
+                ephemeral=True, delete_after=10)
         else:
             lowerField = self.field.lower()
             i = characterList.index(self.character)
@@ -43,17 +47,17 @@ class Edit(discord.ui.View):
                 await con.commit()
             await interaction.response.send_message(
                 f"Replaced value {oldValue} in field {self.field} with {self.newValue} for {self.character}",
-                ephemeral=True, delete_after=5)
+                ephemeral=True, delete_after=10)
             #await interaction.message.delete(delay=5)
-            self.stop()
+            self.stop()  
 
 
     @discord.ui.button(label="Cancel", style=discord.ButtonStyle.red, row=2)
     async def cancel_callback(self, button: discord.ui.Button, interaction: discord.Interaction):
         #TODO: this doesn't delete because bot can't see ephemeral messages or something, could leave it or make messages normal
-        await interaction.response.send_message("Cancelling", ephemeral=True, delete_after=5)
+        await interaction.response.send_message("Cancelling", ephemeral=True, delete_after=10)
         #await interaction.message.delete(delay=5)
-        self.stop()
+        self.stop()  
 
 class EditBox(discord.ui.Modal):
 
@@ -90,32 +94,37 @@ class Add(discord.ui.View):
         if character is None:
             await interaction.response.send_message(
                 f"Type a character loser",
-                ephemeral=True, delete_after=5)
+                ephemeral=True, delete_after=10)
         elif character in characterList:
-            await interaction.response.send_response(f"{character} already present, dumbass", ephemeral=True)
-            self.stop()
+            await interaction.response.send_message(f"{character} already present, dumbass", ephemeral=True)
+            self.stop()  
         else:
             # TODO: something is bugged here so there is an out of bounds index for new characters
             element = self.element
             characterList.append(self.character)
             # TODO: switch to concat since apparently append is deprecated, also this is kind of awful in general
-            self.data.append({"characterName": character, "element": element}, ignore_index=True)
+            temp = pd.DataFrame({
+                "characterName": [character],
+                "element": [element]
+            })
+            self.data = pd.concat((self.data, temp), ignore_index=True)
+
             async with aiosqlite.connect("lament.db") as con:
                 cursor = await con.cursor()
                 await cursor.execute("""INSERT INTO character VALUES (?,"","","","","","", "", ?) """, (character, element))
                 await con.commit()
             await interaction.response.send_message(
                 f"Added character, {self.character}, with element {self.element} to DB",
-                ephemeral=True, delete_after=5)
+                ephemeral=True, delete_after=10)
             #await interaction.message.delete(delay=5)
-            self.stop()
+            self.stop()  
 
 
     @discord.ui.button(label="Cancel", style=discord.ButtonStyle.red, row=2)
     async def cancel_callback(self, button: discord.ui.Button, interaction: discord.Interaction):
-        await interaction.response.send_message("Cancelling", ephemeral=True, delete_after=5)
+        await interaction.response.send_message("Cancelling", ephemeral=True, delete_after=10)
         #await interaction.message.delete(delay=5)
-        self.stop()
+        self.stop() 
 
 class Character(discord.ui.Modal):
     def __init__(self, parent):
@@ -144,13 +153,13 @@ class Delete(discord.ui.View):
             await con.commit()
         await interaction.response.send_response(f"Successfully removed character, {self.character}, from database", ephemeral=True)
         #await interaction.message.delete(delay=5)
-        self.stop()
+        self.stop()  
 
     @discord.ui.button(label="Cancel", style=discord.ButtonStyle.red, row=2)
     async def cancel_callback(self, button: discord.ui.Button, interaction: discord.Interaction):
-        await interaction.response.send_message("Cancelling", ephemeral=True, delete_after=5)
+        await interaction.response.send_message("Cancelling", ephemeral=True, delete_after=10)
         #await interaction.message.delete(delay=5)
-        self.stop()
+        self.stop()  
 
 
 class AddCommand(discord.ui.View):
@@ -189,15 +198,15 @@ class AddCommand(discord.ui.View):
             await interaction.response.send_response(f"Successfully removed character, {self.character}, from database",
                                                      ephemeral=True)
             # await interaction.message.delete(delay=5)
-            self.stop()
+            self.stop()  
         else:
             await interaction.response.send_response("complete the prompt")
 
     @discord.ui.button(label="Cancel", style=discord.ButtonStyle.red, row=1)
     async def cancel_callback(self, button: discord.ui.Button, interaction: discord.Interaction):
-        await interaction.response.send_message("Cancelling", ephemeral=True, delete_after=5)
+        await interaction.response.send_message("Cancelling", ephemeral=True, delete_after=10)
         # await interaction.message.delete(delay=5)
-        self.stop()
+        self.stop()  
 
 
 class Bad(discord.ui.Modal):

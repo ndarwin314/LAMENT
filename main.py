@@ -1,4 +1,6 @@
 # local imports
+import time
+
 import characters
 from characters import data, colors, characterList
 from commands import commandList, commandData
@@ -70,6 +72,7 @@ def bad(string: str):
 async def value(
         ctx: discord.ApplicationContext,
         character: str):
+    print("test")
     index = characters.characters.index(character)
     embed = discord.Embed(title=f"{character} Summary", color=colors[data["element"][index]])
     processed = character.lower().replace(" ", "") + ".webp"
@@ -89,13 +92,23 @@ async def value(
 async def edit(
         ctx: discord.ApplicationContext,
         character: str):
-    await ctx.respond(ephemeral=True, view=components.Edit(character=character, data=data))
+    global data
+    view = components.Edit(character=character, data=data)
+    msg = await ctx.respond(ephemeral=True, view=view)
+    await view.wait()
+    data = view.data
+    await msg.delete_original_message()
+
 
 @discord.default_permissions(manage_messages=True)
 @bot.slash_command(description="Add new character to DB")
 async def add_character(ctx: discord.ApplicationContext):
+    global data
     view = components.Add(data)
-    await ctx.respond(ephemeral=True, view=view)
+    msg = await ctx.respond(ephemeral=True, view=view)
+    await view.wait()
+    data = view.data
+    await msg.delete_original_message()
 
 
 @discord.default_permissions(manage_messages=True)
@@ -260,10 +273,16 @@ async def command(ctx: discord.ApplicationContext, name: str):
         embed.set_image(url=url)
     await ctx.respond(embed=embed)
 
-
+nerdgar_last: float = time.time()
 @bot.slash_command(description="nerdge")
 async def nerdgar(ctx: discord.ApplicationContext):
-    await ctx.respond("https://cdn.discordapp.com/attachments/901684481012944937/1038487360578527263/unknown-54.png")
+    global nerdgar_last
+    t = time.time()
+    if t > 30+nerdgar_last:
+        nerdgar_last = t
+        await ctx.respond("https://cdn.discordapp.com/attachments/901684481012944937/1038487360578527263/unknown-54.png")
+    else:
+        await ctx.defer()
 
 @discord.default_permissions(manage_messages=True)
 @bot.slash_command(description="add embed commands")
